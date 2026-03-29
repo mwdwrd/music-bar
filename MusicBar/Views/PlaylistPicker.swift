@@ -6,8 +6,8 @@ struct PlaylistPicker: View {
     @Bindable var playlistManager: PlaylistManager
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Primary button: add to last-used playlist
+        HStack(spacing: 4) {
+            // One-click: add to last-used playlist
             if let lastUsed = playlistManager.lastUsedPlaylist {
                 Button {
                     Task {
@@ -18,15 +18,23 @@ struct PlaylistPicker: View {
                         )
                     }
                 } label: {
-                    Label(lastUsed, systemImage: "plus")
-                        .lineLimit(1)
-                        .font(.caption)
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(lastUsed)
+                            .font(.system(size: 11))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.fill.quaternary, in: Capsule())
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.plain)
                 .disabled(playlistManager.isLoading)
             }
 
-            // Dropdown for all playlists
+            // Full playlist menu
             Menu {
                 ForEach(playlistManager.playlists, id: \.self) { playlist in
                     Button(playlist) {
@@ -44,8 +52,10 @@ struct PlaylistPicker: View {
                     Text("No playlists found")
                 }
             } label: {
-                Image(systemName: "text.badge.plus")
-                    .font(.title2)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 20, height: 20)
             }
             .menuStyle(.borderlessButton)
             .fixedSize()

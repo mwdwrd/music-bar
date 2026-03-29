@@ -1,6 +1,7 @@
 import Foundation
 import MusicKit
 import Observation
+import AppKit
 
 @MainActor
 @Observable
@@ -8,7 +9,7 @@ final class NowPlayingModel {
     var title: String?
     var artistName: String?
     var albumName: String?
-    var albumArtworkURL: URL?
+    var artworkImage: NSImage?
     var isFavorited: Bool = false
     var isPlaying: Bool = false
     var hasTrack: Bool { title != nil }
@@ -44,7 +45,7 @@ final class NowPlayingModel {
                 self.title = nil
                 self.artistName = nil
                 self.albumName = nil
-                self.albumArtworkURL = nil
+                self.artworkImage = nil
                 self.isFavorited = false
                 self.lastTrackKey = nil
                 return
@@ -59,6 +60,7 @@ final class NowPlayingModel {
             let newKey = "\(track.name)—\(track.artist)"
             if newKey != self.lastTrackKey {
                 self.lastTrackKey = newKey
+                self.artworkImage = nil
                 await fetchArtwork(title: track.name, artist: track.artist)
             }
         } catch {
@@ -67,16 +69,27 @@ final class NowPlayingModel {
     }
 
     private func fetchArtwork(title: String, artist: String) async {
+        // Try AppleScript first (gets embedded artwork directly from Music app)
+        if let data = try? await AppleScriptBridge.shared.getArtworkData(),
+           let image = NSImage(data: data) {
+            self.artworkImage = image
+            return
+        }
+
+        // Fallback: MusicKit catalog search
         do {
             var request = MusicCatalogSearchRequest(term: "\(title) \(artist)", types: [Song.self])
             request.limit = 1
             let response = try await request.response()
             if let song = response.songs.first,
-               let url = song.artwork?.url(width: 200, height: 200) {
-                self.albumArtworkURL = url
+               let url = song.artwork?.url(width: 400, height: 400) {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                if let image = NSImage(data: data) {
+                    self.artworkImage = image
+                }
             }
         } catch {
-            // Artwork lookup is non-critical
+            // Artwork is non-critical
         }
     }
 }

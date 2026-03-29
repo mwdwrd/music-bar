@@ -62,6 +62,26 @@ actor AppleScriptBridge {
         return TrackInfo(name: name, artist: artist, album: album, isFavorited: isFavorited)
     }
 
+    func getArtworkData() throws -> Data? {
+        guard isMusicRunning() else { return nil }
+        let script = """
+        tell application "Music"
+            try
+                set artData to raw data of artwork 1 of current track
+                return artData
+            on error
+                return ""
+            end try
+        end tell
+        """
+        var error: NSDictionary?
+        guard let appleScript = NSAppleScript(source: script) else { return nil }
+        let result = appleScript.executeAndReturnError(&error)
+        if error != nil { return nil }
+        // The result comes back as NSAppleEventDescriptor with raw data
+        return result.data
+    }
+
     // MARK: - Write Operations
 
     func setFavorited(_ favorited: Bool) throws {

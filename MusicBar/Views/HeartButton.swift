@@ -5,7 +5,7 @@ struct HeartButton: View {
     var onToggle: () async -> Void
 
     @State private var isLoading = false
-    @State private var showConfirmation = false
+    @State private var pulse = false
 
     var body: some View {
         Button {
@@ -15,30 +15,21 @@ struct HeartButton: View {
                 await onToggle()
                 isLoading = false
 
-                // Show confirmation briefly
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    showConfirmation = true
-                }
-                try? await Task.sleep(for: .seconds(1.2))
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    showConfirmation = false
-                }
+                // Quick pulse on toggle
+                withAnimation(.easeOut(duration: 0.15)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(150))
+                withAnimation(.easeIn(duration: 0.2)) { pulse = false }
             }
         } label: {
-            ZStack {
-                Image(systemName: isFavorited ? "heart.fill" : "heart")
-                    .font(.title2)
-                    .foregroundStyle(isFavorited ? .pink : .primary)
-                    .scaleEffect(showConfirmation ? 1.3 : 1.0)
-                    .animation(.bouncy(duration: 0.4), value: isFavorited)
-
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
+            Image(systemName: isFavorited ? "heart.fill" : "heart")
+                .font(.system(size: 14))
+                .foregroundStyle(isFavorited ? .pink : .secondary)
+                .scaleEffect(pulse ? 1.25 : 1.0)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.plain)
+        .opacity(isLoading ? 0.5 : 1.0)
         .disabled(isLoading)
     }
 }
