@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		751BDDC2ED282BD5EBDFA79A /* AppleScriptBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA763794CEB5A631C85DE0F /* AppleScriptBridge.swift */; };
 		7FCC476642C1D8A720D5427C /* MusicBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43C75C9613A42BE7CD757BA3 /* MusicBarApp.swift */; };
 		B616E28927814653901EE86A /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = F631F7FECD7942A674A87AC7 /* KeyboardShortcuts */; };
 		BA5E8EE0327E7F8295AD3CB0 /* NowPlayingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50E4DEC3E9F569904E32C91 /* NowPlayingModel.swift */; };
@@ -17,6 +18,7 @@
 		43C75C9613A42BE7CD757BA3 /* MusicBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicBarApp.swift; sourceTree = "<group>"; };
 		8250A976D8D5FB838DA7C929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8C0C89A74BF537A89F785A80 /* MusicBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MusicBar.entitlements; sourceTree = "<group>"; };
+		AFA763794CEB5A631C85DE0F /* AppleScriptBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptBridge.swift; sourceTree = "<group>"; };
 		C2916219C2C99FBA9B05803B /* MusicBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C69A694840CC0CE7E97E7AC5 /* NowPlayingPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingPopover.swift; sourceTree = "<group>"; };
 		E50E4DEC3E9F569904E32C91 /* NowPlayingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingModel.swift; sourceTree = "<group>"; };
@@ -51,6 +53,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		539CBE0D2D3AFF7CBF61AFA0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AFA763794CEB5A631C85DE0F /* AppleScriptBridge.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 		5EFE0D6A613CD1934B980D96 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -81,6 +91,7 @@
 				43C75C9613A42BE7CD757BA3 /* MusicBarApp.swift */,
 				5EFE0D6A613CD1934B980D96 /* Models */,
 				393CC25CEEA210E86E9AA1C4 /* Resources */,
+				539CBE0D2D3AFF7CBF61AFA0 /* Services */,
 				9D30B02EEA8519998125F649 /* Views */,
 			);
 			path = MusicBar;
@@ -149,6 +160,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				751BDDC2ED282BD5EBDFA79A /* AppleScriptBridge.swift in Sources */,
 				7FCC476642C1D8A720D5427C /* MusicBarApp.swift in Sources */,
 				BA5E8EE0327E7F8295AD3CB0 /* NowPlayingModel.swift in Sources */,
 				EDFC6766DE7AC714D4EF292F /* NowPlayingPopover.swift in Sources */,
