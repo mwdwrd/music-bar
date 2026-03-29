@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct NowPlayingPopover: View {
-    let nowPlaying: NowPlayingModel
+    @Bindable var nowPlaying: NowPlayingModel
+    @Bindable var playlistManager: PlaylistManager
 
     var body: some View {
         VStack(spacing: 16) {
@@ -13,14 +14,15 @@ struct NowPlayingPopover: View {
         }
         .padding(20)
         .frame(width: 300)
+        .overlay(alignment: .bottom) {
+            confirmationOverlay
+        }
     }
 
     private var trackInfo: some View {
         VStack(spacing: 16) {
-            // Album art
             artworkView
 
-            // Track details
             VStack(spacing: 4) {
                 Text(nowPlaying.title ?? "")
                     .font(.headline)
@@ -39,7 +41,6 @@ struct NowPlayingPopover: View {
                 }
             }
 
-            // Action buttons (placeholder — wired in Units 5 & 6)
             actionButtons
         }
     }
@@ -75,24 +76,38 @@ struct NowPlayingPopover: View {
 
     private var actionButtons: some View {
         HStack(spacing: 12) {
-            // Heart button placeholder
-            Button {
-                // Wired in Unit 5
-            } label: {
-                Image(systemName: nowPlaying.isFavorited ? "heart.fill" : "heart")
-                    .font(.title3)
-                    .foregroundStyle(nowPlaying.isFavorited ? .pink : .primary)
+            HeartButton(isFavorited: $nowPlaying.isFavorited) {
+                do {
+                    let newState = !nowPlaying.isFavorited
+                    try await AppleScriptBridge.shared.setFavorited(newState)
+                    await MainActor.run {
+                        nowPlaying.isFavorited = newState
+                    }
+                } catch {
+                    // Revert on failure
+                }
             }
-            .buttonStyle(.glass)
 
-            // Playlist button placeholder
-            Button {
-                // Wired in Unit 6
-            } label: {
-                Label("Add to Playlist", systemImage: "text.badge.plus")
-                    .font(.title3)
+            if let title = nowPlaying.title, let artist = nowPlaying.artistName {
+                PlaylistPicker(
+                    trackName: title,
+                    artistName: artist,
+                    playlistManager: playlistManager
+                )
             }
-            .buttonStyle(.glass)
+        }
+    }
+
+    @ViewBuilder
+    private var confirmationOverlay: some View {
+        if let message = playlistManager.confirmationMessage {
+            Text(message)
+                .font(.caption)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.ultraThinMaterial, in: Capsule())
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.bottom, 8)
         }
     }
 
