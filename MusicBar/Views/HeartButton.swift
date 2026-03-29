@@ -29,7 +29,8 @@ struct HeartButton: View {
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.plain)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
         .opacity(isLoading ? 0.5 : 1.0)
         .disabled(isLoading)
     }

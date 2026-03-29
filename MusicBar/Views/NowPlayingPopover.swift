@@ -72,7 +72,8 @@ struct NowPlayingPopover: View {
             .frame(width: 44, height: 44)
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.plain)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - 2. Heart
@@ -188,7 +189,8 @@ struct PlaylistToggle: View {
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.plain)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
         .opacity(isLoading ? 0.5 : 1.0)
         .disabled(isLoading)
     }
