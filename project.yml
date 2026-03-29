@@ -10,6 +10,9 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: "2.0.0"
+  PhosphorSwift:
+    url: https://github.com/phosphor-icons/swift
+    from: "2.0.0"
 
 targets:
   MusicBar:
@@ -31,6 +34,7 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
     dependencies:
       - package: KeyboardShortcuts
+      - package: PhosphorSwift
     entitlements:
       path: MusicBar/Resources/MusicBar.entitlements
       properties:

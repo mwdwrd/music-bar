@@ -1,4 +1,5 @@
 import SwiftUI
+import PhosphorSwift
 
 struct NowPlayingPopover: View {
     @Bindable var nowPlaying: NowPlayingModel
@@ -37,18 +38,13 @@ struct NowPlayingPopover: View {
 
     private var iconRow: some View {
         HStack(spacing: 10) {
-            // 1. Artwork — tap to reveal who's playing
             artworkButton
-
-            // 2. Heart — tap to toggle love
             heartIcon
-
-            // 3. Plus — tap to add, hold for playlist picker
-            plusIcon
+            plusButton
         }
     }
 
-    // MARK: - Artwork Button
+    // MARK: - 1. Artwork
 
     private var artworkButton: some View {
         Button {
@@ -63,9 +59,9 @@ struct NowPlayingPopover: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(.fill.tertiary)
-                        Image(systemName: "music.note")
-                            .font(.system(size: 22, weight: .light))
-                            .foregroundStyle(.secondary)
+                        Ph.musicNote.bold
+                            .color(.secondary)
+                            .frame(width: 24, height: 24)
                     }
                 }
             }
@@ -75,7 +71,7 @@ struct NowPlayingPopover: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Heart
+    // MARK: - 2. Heart
 
     private var heartIcon: some View {
         HeartButton(isFavorited: $nowPlaying.isFavorited) {
@@ -89,10 +85,23 @@ struct NowPlayingPopover: View {
         }
     }
 
-    // MARK: - Plus (tap = add, hold = pick playlist)
+    // MARK: - 3. Plus
 
-    private var plusIcon: some View {
-        Menu {
+    private var plusButton: some View {
+        Button {
+            if let playlist = playlistManager.lastUsedPlaylist {
+                addToPlaylist(playlist)
+            }
+        } label: {
+            Ph.plus.bold
+                .color(.primary)
+                .frame(width: 28, height: 28)
+                .frame(width: 60, height: 60)
+                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 14))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
             ForEach(playlistManager.playlists, id: \.self) { playlist in
                 Button(playlist) {
                     addToPlaylist(playlist)
@@ -101,19 +110,12 @@ struct NowPlayingPopover: View {
             if playlistManager.playlists.isEmpty {
                 Text("No playlists found")
             }
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 24, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: 60, height: 60)
-                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 14))
-        } primaryAction: {
-            if let playlist = playlistManager.lastUsedPlaylist {
-                addToPlaylist(playlist)
-            }
+
+            Divider()
+
+            Button("Settings...") { onOpenSettings() }
+            Button("Quit Music Bar") { onQuit() }
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
     }
 
     private func addToPlaylist(_ name: String) {
@@ -133,9 +135,14 @@ struct NowPlayingPopover: View {
 
     private var trackInfoPanel: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(nowPlaying.title ?? "")
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1)
+            HStack(spacing: 6) {
+                if nowPlaying.isPlaying {
+                    PlaybackIndicator()
+                }
+                Text(nowPlaying.title ?? "")
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+            }
             Text(nowPlaying.artistName ?? "")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
@@ -182,9 +189,10 @@ struct NowPlayingPopover: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(.fill.tertiary)
-                Image(systemName: "music.note")
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(.tertiary)
+                Ph.musicNote.bold
+                    .color(.gray)
+                    .frame(width: 24, height: 24)
+                    .opacity(0.5)
             }
             .frame(width: 60, height: 60)
 
@@ -198,4 +206,31 @@ struct NowPlayingPopover: View {
             }
         }
     }
+}
+
+// MARK: - Playback Indicator
+
+struct PlaybackIndicator: View {
+    @State private var animate = false
+
+    var body: some View {
+        HStack(spacing: 1.5) {
+            ForEach(0..<3, id: \.self) { i in
+                RoundedRectangle(cornerRadius: 0.5)
+                    .fill(.pink)
+                    .frame(width: 2, height: animate ? heights[i] : 3)
+                    .animation(
+                        .easeInOut(duration: durations[i])
+                        .repeatForever(autoreverses: true)
+                        .delay(Double(i) * 0.1),
+                        value: animate
+                    )
+            }
+        }
+        .frame(width: 10, height: 10)
+        .onAppear { animate = true }
+    }
+
+    private let heights: [CGFloat] = [8, 10, 6]
+    private let durations: [Double] = [0.4, 0.5, 0.35]
 }
