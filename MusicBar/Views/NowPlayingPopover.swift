@@ -3,8 +3,8 @@ import PhosphorSwift
 
 private let iconSize: CGFloat = 44
 private let iconSpacing: CGFloat = 8
-// 3 icons + 2 gaps
-private let rowWidth: CGFloat = iconSize * 3 + iconSpacing * 2
+// 4 icons + 3 gaps
+private let rowWidth: CGFloat = iconSize * 4 + iconSpacing * 3
 
 struct NowPlayingPopover: View {
     @Bindable var nowPlaying: NowPlayingModel
@@ -30,18 +30,18 @@ struct NowPlayingPopover: View {
             }
         }
         .contextMenu {
-            Button("Settings...") { onOpenSettings() }
             Button("Quit Music Bar") { onQuit() }
         }
     }
 
-    // MARK: - Three Icons
+    // MARK: - Four Icons
 
     private var iconRow: some View {
         HStack(spacing: iconSpacing) {
             artworkIcon
             heartButton
             playlistButton
+            settingsButton
         }
     }
 
@@ -89,42 +89,44 @@ struct NowPlayingPopover: View {
             isInPlaylist: playlistManager.isInTargetPlaylist,
             isConfigured: playlistManager.targetPlaylist != nil,
             isLoading: playlistManager.isLoading,
-            onToggle: { Task { await playlistManager.toggle() } },
-            onOpenSettings: onOpenSettings
+            onToggle: { Task { await playlistManager.toggle() } }
         )
+    }
+
+    // MARK: - 4. Settings
+
+    private var settingsButton: some View {
+        Button { onOpenSettings() } label: {
+            Ph.gearSix.bold
+                .renderingMode(.template)
+                .foregroundStyle(.white)
+                .frame(width: 20, height: 20)
+                .frame(width: iconSize, height: iconSize)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - Track Info
 
     private var trackInfoPanel: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    if nowPlaying.isPlaying {
-                        PlaybackIndicator()
-                    }
-                    MarqueeText(
-                        text: nowPlaying.title ?? "",
-                        font: .system(size: 12, weight: .medium)
-                    )
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                if nowPlaying.isPlaying {
+                    PlaybackIndicator()
                 }
-                Text(nowPlaying.artistName ?? "")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                MarqueeText(
+                    text: nowPlaying.title ?? "",
+                    font: .system(size: 12, weight: .medium)
+                )
             }
-
-            Spacer(minLength: 0)
-
-            Button { onOpenSettings() } label: {
-                Ph.gearSix.bold
-                    .renderingMode(.template)
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 12, height: 12)
-            }
-            .buttonStyle(.plain)
+            Text(nowPlaying.artistName ?? "")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
-        .frame(width: rowWidth)
+        .frame(width: rowWidth, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.bottom, 10)
     }
@@ -186,7 +188,6 @@ struct MarqueeText: View {
                     offset = 0
                     animating = false
                     textWidth = 0
-                    // Re-measure on next layout
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         startScrollIfNeeded()
                     }
@@ -200,22 +201,22 @@ struct MarqueeText: View {
         guard needsScroll, !animating else { return }
         animating = true
         let scrollDistance = textWidth - containerWidth + 20
-        let duration = Double(scrollDistance) / 30.0 // ~30pt/sec
+        let duration = Double(scrollDistance) / 30.0
 
         Task {
-            try? await Task.sleep(for: .seconds(1.5)) // pause before scrolling
+            try? await Task.sleep(for: .seconds(1.5))
             guard animating else { return }
             withAnimation(.linear(duration: duration)) {
                 offset = -scrollDistance
             }
-            try? await Task.sleep(for: .seconds(duration + 1.5)) // pause at end
+            try? await Task.sleep(for: .seconds(duration + 1.5))
             guard animating else { return }
             withAnimation(.linear(duration: 0.4)) {
                 offset = 0
             }
             try? await Task.sleep(for: .seconds(0.5))
             animating = false
-            startScrollIfNeeded() // loop
+            startScrollIfNeeded()
         }
     }
 }
@@ -227,23 +228,19 @@ struct PlaylistToggle: View {
     let isConfigured: Bool
     let isLoading: Bool
     var onToggle: () -> Void
-    var onOpenSettings: () -> Void
 
     @State private var pulse = false
 
     var body: some View {
         Button {
-            if isConfigured {
-                onToggle()
-                withAnimation(.easeOut(duration: 0.12)) { pulse = true }
-                Task {
-                    try? await Task.sleep(for: .milliseconds(120))
-                    await MainActor.run {
-                        withAnimation(.easeIn(duration: 0.2)) { pulse = false }
-                    }
+            guard isConfigured else { return }
+            onToggle()
+            withAnimation(.easeOut(duration: 0.12)) { pulse = true }
+            Task {
+                try? await Task.sleep(for: .milliseconds(120))
+                await MainActor.run {
+                    withAnimation(.easeIn(duration: 0.2)) { pulse = false }
                 }
-            } else {
-                onOpenSettings()
             }
         } label: {
             (isInPlaylist ? Ph.check.bold : Ph.plus.bold)
@@ -256,8 +253,8 @@ struct PlaylistToggle: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
-        .opacity(isLoading ? 0.5 : 1.0)
-        .disabled(isLoading)
+        .opacity(!isConfigured || isLoading ? 0.3 : 1.0)
+        .disabled(!isConfigured || isLoading)
     }
 }
 
