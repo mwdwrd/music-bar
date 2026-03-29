@@ -7,27 +7,19 @@ struct NowPlayingPopover: View {
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
-    @State private var showTrackInfo = false
-
     var body: some View {
         VStack(spacing: 0) {
             if nowPlaying.hasTrack {
                 iconRow
                     .padding(10)
-
-                if showTrackInfo {
-                    trackInfoPanel
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                trackInfoPanel
             } else {
                 emptyState
                     .padding(14)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: showTrackInfo)
         .onChange(of: nowPlaying.trackDidChange) {
             if nowPlaying.trackDidChange {
-                showTrackInfo = false
                 Task { await playlistManager.checkMembership() }
                 nowPlaying.trackDidChange = false
             }
@@ -51,28 +43,23 @@ struct NowPlayingPopover: View {
     // MARK: - 1. Artwork
 
     private var artworkButton: some View {
-        Button {
-            withAnimation { showTrackInfo.toggle() }
-        } label: {
-            Group {
-                if let image = nowPlaying.artworkImage {
-                    Image(nsImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    ZStack {
-                        Color.clear
-                        Ph.musicNote.bold
-                            .renderingMode(.template)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20, height: 20)
-                    }
+        Group {
+            if let image = nowPlaying.artworkImage {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                ZStack {
+                    Color.clear
+                    Ph.musicNote.bold
+                        .renderingMode(.template)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20, height: 20)
                 }
             }
-            .frame(width: 44, height: 44)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
+        .frame(width: 44, height: 44)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
     }
 
@@ -102,30 +89,35 @@ struct NowPlayingPopover: View {
         )
     }
 
-    // MARK: - Track Info Panel
+    // MARK: - Track Info
 
     private var trackInfoPanel: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 6) {
-                if nowPlaying.isPlaying {
-                    PlaybackIndicator()
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    if nowPlaying.isPlaying {
+                        PlaybackIndicator()
+                    }
+                    Text(nowPlaying.title ?? "")
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
                 }
-                Text(nowPlaying.title ?? "")
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-            }
-            Text(nowPlaying.artistName ?? "")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            if let album = nowPlaying.albumName {
-                Text(album)
+                Text(nowPlaying.artistName ?? "")
                     .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+
+            Spacer()
+
+            Button { onOpenSettings() } label: {
+                Ph.gearSix.bold
+                    .renderingMode(.template)
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.bottom, 10)
     }
