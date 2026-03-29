@@ -11,21 +11,10 @@ struct MusicBarApp: App {
         MenuBarExtra {
             NowPlayingPopover(
                 nowPlaying: nowPlaying,
-                playlistManager: playlistManager
+                playlistManager: playlistManager,
+                onOpenSettings: openSettings,
+                onQuit: { NSApplication.shared.terminate(nil) }
             )
-
-            Divider()
-
-            Button("Settings...") {
-                NSApp.activate(ignoringOtherApps: true)
-                openSettings()
-            }
-            .keyboardShortcut(",", modifiers: .command)
-
-            Button("Quit Music Bar") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q", modifiers: .command)
         } label: {
             Label {
                 Text(nowPlaying.title ?? "Not Playing")
@@ -81,6 +70,7 @@ struct MusicBarApp: App {
     }
 
     private func openSettings() {
+        NSApp.activate(ignoringOtherApps: true)
         if #available(macOS 14, *) {
             NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         } else {

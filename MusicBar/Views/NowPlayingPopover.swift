@@ -3,16 +3,32 @@ import SwiftUI
 struct NowPlayingPopover: View {
     @Bindable var nowPlaying: NowPlayingModel
     @Bindable var playlistManager: PlaylistManager
+    var onOpenSettings: () -> Void
+    var onQuit: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             if nowPlaying.hasTrack {
                 trackInfo
+                    .padding(20)
             } else {
                 emptyState
+                    .padding(20)
             }
+
+            Divider()
+
+            HStack {
+                Button("Settings") { onOpenSettings() }
+                Spacer()
+                Button("Quit") { onQuit() }
+            }
+            .buttonStyle(.plain)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
-        .padding(20)
         .frame(width: 300)
         .overlay(alignment: .bottom) {
             confirmationOverlay
@@ -107,7 +123,7 @@ struct NowPlayingPopover: View {
                 .padding(.vertical, 6)
                 .background(.ultraThinMaterial, in: Capsule())
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.bottom, 8)
+                .padding(.bottom, 40)
         }
     }
 
