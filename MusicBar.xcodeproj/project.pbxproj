@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		09A3949CBBB5222E58158B0B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E841B26D8F0F8952BE78C116 /* SettingsView.swift */; };
+		21C8998ECFA4E3DBF7D47349 /* ShortcutNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AFCE1390D460D9A08EB7B9 /* ShortcutNames.swift */; };
 		4ECE96ED0F8C28359AB5D9BC /* PlaylistPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B533FD50336962884D165034 /* PlaylistPicker.swift */; };
 		703C413EEB43F087C2158629 /* PlaylistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BAEA0267EB5C1493B91775 /* PlaylistManager.swift */; };
 		751BDDC2ED282BD5EBDFA79A /* AppleScriptBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA763794CEB5A631C85DE0F /* AppleScriptBridge.swift */; };
@@ -22,12 +24,14 @@
 		43C75C9613A42BE7CD757BA3 /* MusicBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicBarApp.swift; sourceTree = "<group>"; };
 		5FABF5F272619A8488C8D71E /* HeartButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartButton.swift; sourceTree = "<group>"; };
 		8250A976D8D5FB838DA7C929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		84AFCE1390D460D9A08EB7B9 /* ShortcutNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutNames.swift; sourceTree = "<group>"; };
 		8C0C89A74BF537A89F785A80 /* MusicBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MusicBar.entitlements; sourceTree = "<group>"; };
 		AFA763794CEB5A631C85DE0F /* AppleScriptBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptBridge.swift; sourceTree = "<group>"; };
 		B533FD50336962884D165034 /* PlaylistPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistPicker.swift; sourceTree = "<group>"; };
 		C2916219C2C99FBA9B05803B /* MusicBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C69A694840CC0CE7E97E7AC5 /* NowPlayingPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingPopover.swift; sourceTree = "<group>"; };
 		E50E4DEC3E9F569904E32C91 /* NowPlayingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingModel.swift; sourceTree = "<group>"; };
+		E841B26D8F0F8952BE78C116 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +86,7 @@
 				5FABF5F272619A8488C8D71E /* HeartButton.swift */,
 				C69A694840CC0CE7E97E7AC5 /* NowPlayingPopover.swift */,
 				B533FD50336962884D165034 /* PlaylistPicker.swift */,
+				E841B26D8F0F8952BE78C116 /* SettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -94,6 +99,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		E63820F45625291BA5A58EF9 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				84AFCE1390D460D9A08EB7B9 /* ShortcutNames.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
 		FE10D9D3820FC93832F3AE49 /* MusicBar */ = {
 			isa = PBXGroup;
 			children = (
@@ -101,6 +114,7 @@
 				5EFE0D6A613CD1934B980D96 /* Models */,
 				393CC25CEEA210E86E9AA1C4 /* Resources */,
 				539CBE0D2D3AFF7CBF61AFA0 /* Services */,
+				E63820F45625291BA5A58EF9 /* Settings */,
 				9D30B02EEA8519998125F649 /* Views */,
 			);
 			path = MusicBar;
@@ -176,6 +190,8 @@
 				EDFC6766DE7AC714D4EF292F /* NowPlayingPopover.swift in Sources */,
 				703C413EEB43F087C2158629 /* PlaylistManager.swift in Sources */,
 				4ECE96ED0F8C28359AB5D9BC /* PlaylistPicker.swift in Sources */,
+				09A3949CBBB5222E58158B0B /* SettingsView.swift in Sources */,
+				21C8998ECFA4E3DBF7D47349 /* ShortcutNames.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

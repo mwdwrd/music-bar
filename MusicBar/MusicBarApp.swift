@@ -1,5 +1,6 @@
 import SwiftUI
 import MusicKit
+import KeyboardShortcuts
 
 @main
 struct MusicBarApp: App {
@@ -12,6 +13,19 @@ struct MusicBarApp: App {
                 nowPlaying: nowPlaying,
                 playlistManager: playlistManager
             )
+
+            Divider()
+
+            Button("Settings...") {
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
+            }
+            .keyboardShortcut(",", modifiers: .command)
+
+            Button("Quit Music Bar") {
+                NSApplication.shared.terminate(nil)
+            }
+            .keyboardShortcut("q", modifiers: .command)
         } label: {
             Label {
                 Text(nowPlaying.title ?? "Not Playing")
@@ -21,6 +35,10 @@ struct MusicBarApp: App {
             }
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView()
+        }
     }
 
     init() {
@@ -29,6 +47,44 @@ struct MusicBarApp: App {
             if status != .authorized {
                 print("MusicKit authorization denied: \(status)")
             }
+        }
+
+        setupGlobalShortcuts()
+    }
+
+    private func setupGlobalShortcuts() {
+        KeyboardShortcuts.onKeyUp(for: .toggleLove) { [self] in
+            Task { @MainActor in
+                guard nowPlaying.hasTrack else { return }
+                let newState = !nowPlaying.isFavorited
+                do {
+                    try await AppleScriptBridge.shared.setFavorited(newState)
+                    nowPlaying.isFavorited = newState
+                } catch {
+                    // Silent failure for keyboard shortcuts
+                }
+            }
+        }
+
+        KeyboardShortcuts.onKeyUp(for: .addToLastPlaylist) { [self] in
+            Task { @MainActor in
+                guard let title = nowPlaying.title,
+                      let artist = nowPlaying.artistName,
+                      let playlist = playlistManager.lastUsedPlaylist else { return }
+                await playlistManager.addToPlaylist(
+                    playlist,
+                    trackName: title,
+                    artistName: artist
+                )
+            }
+        }
+    }
+
+    private func openSettings() {
+        if #available(macOS 14, *) {
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        } else {
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
 }
