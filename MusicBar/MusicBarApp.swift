@@ -6,13 +6,17 @@ import KeyboardShortcuts
 struct MusicBarApp: App {
     @State private var nowPlaying = NowPlayingModel()
     @State private var playlistManager = PlaylistManager()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         MenuBarExtra {
             NowPlayingPopover(
                 nowPlaying: nowPlaying,
                 playlistManager: playlistManager,
-                onOpenSettings: openSettings,
+                onOpenSettings: {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "settings")
+                },
                 onQuit: { NSApplication.shared.terminate(nil) }
             )
         } label: {
@@ -25,9 +29,11 @@ struct MusicBarApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Settings {
+        Window("Music Bar Settings", id: "settings") {
             SettingsView()
         }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 
     init() {
@@ -58,15 +64,6 @@ struct MusicBarApp: App {
                 guard nowPlaying.hasTrack else { return }
                 await playlistManager.toggle()
             }
-        }
-    }
-
-    private func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
 }

@@ -1,6 +1,11 @@
 import SwiftUI
 import PhosphorSwift
 
+private let iconSize: CGFloat = 44
+private let iconSpacing: CGFloat = 8
+// 3 icons + 2 gaps
+private let rowWidth: CGFloat = iconSize * 3 + iconSpacing * 2
+
 struct NowPlayingPopover: View {
     @Bindable var nowPlaying: NowPlayingModel
     @Bindable var playlistManager: PlaylistManager
@@ -8,7 +13,7 @@ struct NowPlayingPopover: View {
     var onQuit: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             if nowPlaying.hasTrack {
                 iconRow
                     .padding(10)
@@ -33,8 +38,8 @@ struct NowPlayingPopover: View {
     // MARK: - Three Icons
 
     private var iconRow: some View {
-        HStack(spacing: 8) {
-            artworkButton
+        HStack(spacing: iconSpacing) {
+            artworkIcon
             heartButton
             playlistButton
         }
@@ -42,7 +47,7 @@ struct NowPlayingPopover: View {
 
     // MARK: - 1. Artwork
 
-    private var artworkButton: some View {
+    private var artworkIcon: some View {
         Group {
             if let image = nowPlaying.artworkImage {
                 Image(nsImage: image)
@@ -58,7 +63,7 @@ struct NowPlayingPopover: View {
                 }
             }
         }
-        .frame(width: 44, height: 44)
+        .frame(width: iconSize, height: iconSize)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
     }
@@ -98,9 +103,10 @@ struct NowPlayingPopover: View {
                     if nowPlaying.isPlaying {
                         PlaybackIndicator()
                     }
-                    Text(nowPlaying.title ?? "")
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
+                    MarqueeText(
+                        text: nowPlaying.title ?? "",
+                        font: .system(size: 12, weight: .medium)
+                    )
                 }
                 Text(nowPlaying.artistName ?? "")
                     .font(.system(size: 11))
@@ -108,7 +114,7 @@ struct NowPlayingPopover: View {
                     .lineLimit(1)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             Button { onOpenSettings() } label: {
                 Ph.gearSix.bold
@@ -118,14 +124,15 @@ struct NowPlayingPopover: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 14)
+        .frame(width: rowWidth)
+        .padding(.horizontal, 10)
         .padding(.bottom, 10)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: iconSpacing) {
             ZStack {
                 Color.clear
                 Ph.musicNote.bold
@@ -133,7 +140,7 @@ struct NowPlayingPopover: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 20, height: 20)
             }
-            .frame(width: 44, height: 44)
+            .frame(width: iconSize, height: iconSize)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Nothing playing")
@@ -143,6 +150,72 @@ struct NowPlayingPopover: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
             }
+        }
+    }
+}
+
+// MARK: - Marquee Text
+
+struct MarqueeText: View {
+    let text: String
+    let font: Font
+
+    @State private var textWidth: CGFloat = 0
+    @State private var containerWidth: CGFloat = 0
+    @State private var offset: CGFloat = 0
+    @State private var animating = false
+
+    private var needsScroll: Bool { textWidth > containerWidth }
+
+    var body: some View {
+        GeometryReader { geo in
+            let cw = geo.size.width
+            Text(text)
+                .font(font)
+                .lineLimit(1)
+                .fixedSize()
+                .background(GeometryReader { textGeo in
+                    Color.clear.onAppear {
+                        textWidth = textGeo.size.width
+                        containerWidth = cw
+                        startScrollIfNeeded()
+                    }
+                })
+                .offset(x: needsScroll ? offset : 0)
+                .onChange(of: text) {
+                    offset = 0
+                    animating = false
+                    textWidth = 0
+                    // Re-measure on next layout
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        startScrollIfNeeded()
+                    }
+                }
+        }
+        .frame(height: 16)
+        .clipped()
+    }
+
+    private func startScrollIfNeeded() {
+        guard needsScroll, !animating else { return }
+        animating = true
+        let scrollDistance = textWidth - containerWidth + 20
+        let duration = Double(scrollDistance) / 30.0 // ~30pt/sec
+
+        Task {
+            try? await Task.sleep(for: .seconds(1.5)) // pause before scrolling
+            guard animating else { return }
+            withAnimation(.linear(duration: duration)) {
+                offset = -scrollDistance
+            }
+            try? await Task.sleep(for: .seconds(duration + 1.5)) // pause at end
+            guard animating else { return }
+            withAnimation(.linear(duration: 0.4)) {
+                offset = 0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+            animating = false
+            startScrollIfNeeded() // loop
         }
     }
 }
@@ -178,7 +251,7 @@ struct PlaylistToggle: View {
                 .foregroundStyle(isInPlaylist ? .green : .white)
                 .frame(width: 20, height: 20)
                 .scaleEffect(pulse ? 1.15 : 1.0)
-                .frame(width: 44, height: 44)
+                .frame(width: iconSize, height: iconSize)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
