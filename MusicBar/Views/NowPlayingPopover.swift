@@ -63,7 +63,8 @@ struct NowPlayingPopover: View {
                     ZStack {
                         Color.clear
                         Ph.musicNote.bold
-                            .color(.secondary)
+                            .renderingMode(.template)
+                            .foregroundStyle(.secondary)
                             .frame(width: 20, height: 20)
                     }
                 }
@@ -135,9 +136,9 @@ struct NowPlayingPopover: View {
             ZStack {
                 Color.clear
                 Ph.musicNote.bold
-                    .color(.gray)
+                    .renderingMode(.template)
+                    .foregroundStyle(.secondary)
                     .frame(width: 20, height: 20)
-                    .opacity(0.5)
             }
             .frame(width: 44, height: 44)
 
@@ -180,7 +181,8 @@ struct PlaylistToggle: View {
             }
         } label: {
             (isInPlaylist ? Ph.check.bold : Ph.plus.bold)
-                .color(isInPlaylist ? .green : .white)
+                .renderingMode(.template)
+                .foregroundStyle(isInPlaylist ? .green : .white)
                 .frame(width: 20, height: 20)
                 .scaleEffect(pulse ? 1.15 : 1.0)
                 .frame(width: 44, height: 44)

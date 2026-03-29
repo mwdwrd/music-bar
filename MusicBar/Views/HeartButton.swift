@@ -22,7 +22,8 @@ struct HeartButton: View {
             }
         } label: {
             (isFavorited ? Ph.heart.fill : Ph.heart.bold)
-                .color(isFavorited ? .pink : .white)
+                .renderingMode(.template)
+                .foregroundStyle(isFavorited ? .pink : .white)
                 .frame(width: 20, height: 20)
                 .scaleEffect(pulse ? 1.15 : 1.0)
                 .frame(width: 44, height: 44)
