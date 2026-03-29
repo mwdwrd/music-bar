@@ -6,204 +6,196 @@ struct NowPlayingPopover: View {
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
+    @State private var showTrackInfo = false
+    @State private var toastMessage: String?
+
     var body: some View {
         VStack(spacing: 0) {
             if nowPlaying.hasTrack {
-                trackContent
+                iconRow
+                    .padding(12)
+
+                if showTrackInfo {
+                    trackInfoPanel
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             } else {
                 emptyState
+                    .padding(16)
             }
         }
-        .frame(width: 280)
+        .animation(.easeOut(duration: 0.2), value: showTrackInfo)
         .overlay(alignment: .bottom) {
-            confirmationToast
+            toast
+        }
+        .onChange(of: nowPlaying.title) {
+            showTrackInfo = false
         }
     }
 
-    // MARK: - Track Content
+    // MARK: - Three Icons
 
-    private var trackContent: some View {
-        VStack(spacing: 0) {
-            // Artwork — the visual anchor
-            artworkView
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+    private var iconRow: some View {
+        HStack(spacing: 10) {
+            // 1. Artwork — tap to reveal who's playing
+            artworkButton
 
-            // Track info + actions
-            VStack(spacing: 14) {
-                trackMeta
-                actionRow
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 16)
+            // 2. Heart — tap to toggle love
+            heartIcon
 
-            // Footer
-            footerBar
+            // 3. Plus — tap to add, hold for playlist picker
+            plusIcon
         }
     }
 
-    private var artworkView: some View {
-        Group {
-            if let image = nowPlaying.artworkImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                artworkPlaceholder
-            }
-        }
-        .frame(width: 240, height: 240)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
+    // MARK: - Artwork Button
 
-    private var artworkPlaceholder: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(.fill.tertiary)
-
-            Image(systemName: "music.note")
-                .font(.system(size: 36, weight: .light))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    // MARK: - Track Metadata
-
-    private var trackMeta: some View {
-        HStack(alignment: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    if nowPlaying.isPlaying {
-                        PlaybackIndicator()
+    private var artworkButton: some View {
+        Button {
+            withAnimation { showTrackInfo.toggle() }
+        } label: {
+            Group {
+                if let image = nowPlaying.artworkImage {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(.fill.tertiary)
+                        Image(systemName: "music.note")
+                            .font(.system(size: 22, weight: .light))
+                            .foregroundStyle(.secondary)
                     }
-                    Text(nowPlaying.title ?? "")
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
                 }
-
-                Text(nowPlaying.artistName ?? "")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: 60, height: 60)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Heart
+
+    private var heartIcon: some View {
+        HeartButton(isFavorited: $nowPlaying.isFavorited) {
+            do {
+                let newState = !nowPlaying.isFavorited
+                try await AppleScriptBridge.shared.setFavorited(newState)
+                await MainActor.run {
+                    nowPlaying.isFavorited = newState
+                }
+            } catch {}
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Plus (tap = add, hold = pick playlist)
 
-    private var actionRow: some View {
-        HStack(spacing: 8) {
-            HeartButton(isFavorited: $nowPlaying.isFavorited) {
-                do {
-                    let newState = !nowPlaying.isFavorited
-                    try await AppleScriptBridge.shared.setFavorited(newState)
-                    await MainActor.run {
-                        nowPlaying.isFavorited = newState
-                    }
-                } catch {}
+    private var plusIcon: some View {
+        Menu {
+            ForEach(playlistManager.playlists, id: \.self) { playlist in
+                Button(playlist) {
+                    addToPlaylist(playlist)
+                }
             }
-
-            if let title = nowPlaying.title, let artist = nowPlaying.artistName {
-                PlaylistPicker(
-                    trackName: title,
-                    artistName: artist,
-                    playlistManager: playlistManager
-                )
+            if playlistManager.playlists.isEmpty {
+                Text("No playlists found")
             }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 60, height: 60)
+                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 14))
+        } primaryAction: {
+            if let playlist = playlistManager.lastUsedPlaylist {
+                addToPlaylist(playlist)
+            }
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
 
-            Spacer()
+    private func addToPlaylist(_ name: String) {
+        guard let title = nowPlaying.title,
+              let artist = nowPlaying.artistName else { return }
+        Task {
+            let success = await playlistManager.addToPlaylist(
+                name, trackName: title, artistName: artist
+            )
+            if success {
+                showToast("Added to \(name)")
+            }
         }
     }
 
-    // MARK: - Footer
+    // MARK: - Track Info Panel
 
-    private var footerBar: some View {
-        HStack(spacing: 0) {
-            Button { onOpenSettings() } label: {
-                Image(systemName: "gearshape")
+    private var trackInfoPanel: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(nowPlaying.title ?? "")
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+            Text(nowPlaying.artistName ?? "")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            if let album = nowPlaying.albumName {
+                Text(album)
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
+                    .lineLimit(1)
             }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Button("Quit", action: onQuit)
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .buttonStyle(.plain)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.bottom, 12)
     }
 
-    // MARK: - Confirmation Toast
+    // MARK: - Toast
 
     @ViewBuilder
-    private var confirmationToast: some View {
-        if let message = playlistManager.confirmationMessage {
+    private var toast: some View {
+        if let message = toastMessage {
             Text(message)
                 .font(.system(size: 11, weight: .medium))
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(.ultraThinMaterial, in: Capsule())
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.bottom, 36)
+                .padding(.bottom, 4)
+        }
+    }
+
+    private func showToast(_ message: String) {
+        withAnimation(.easeOut(duration: 0.15)) { toastMessage = message }
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation(.easeIn(duration: 0.3)) { toastMessage = nil }
         }
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 10) {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.fill.tertiary)
                 Image(systemName: "music.note")
-                    .font(.system(size: 28, weight: .light))
+                    .font(.system(size: 22, weight: .light))
                     .foregroundStyle(.tertiary)
-
-                VStack(spacing: 4) {
-                    Text("Nothing playing")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    Text("Play a track in Music to get started.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
-            .padding(.horizontal, 20)
+            .frame(width: 60, height: 60)
 
-            footerBar
-        }
-    }
-}
-
-// MARK: - Playback Indicator
-
-struct PlaybackIndicator: View {
-    @State private var animate = false
-
-    var body: some View {
-        HStack(spacing: 1.5) {
-            ForEach(0..<3, id: \.self) { i in
-                RoundedRectangle(cornerRadius: 0.5)
-                    .fill(.pink)
-                    .frame(width: 2, height: animate ? heights[i] : 3)
-                    .animation(
-                        .easeInOut(duration: durations[i])
-                        .repeatForever(autoreverses: true)
-                        .delay(Double(i) * 0.1),
-                        value: animate
-                    )
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Nothing playing")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Text("Play something in Music")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
             }
         }
-        .frame(width: 10, height: 10)
-        .onAppear { animate = true }
     }
-
-    private let heights: [CGFloat] = [8, 10, 6]
-    private let durations: [Double] = [0.4, 0.5, 0.35]
 }

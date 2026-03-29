@@ -49,9 +49,7 @@ struct MusicBarApp: App {
                 do {
                     try await AppleScriptBridge.shared.setFavorited(newState)
                     nowPlaying.isFavorited = newState
-                } catch {
-                    // Silent failure for keyboard shortcuts
-                }
+                } catch {}
             }
         }
 
