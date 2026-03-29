@@ -34,5 +34,5 @@ targets:
     entitlements:
       path: MusicBar/Resources/MusicBar.entitlements
       properties:
-        com.apple.security.app-sandbox: true
+        com.apple.security.app-sandbox: false
         com.apple.security.automation.apple-events: true
