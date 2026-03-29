@@ -14,7 +14,7 @@ struct NowPlayingPopover: View {
         VStack(spacing: 0) {
             if nowPlaying.hasTrack {
                 iconRow
-                    .padding(12)
+                    .padding(10)
 
                 if showTrackInfo {
                     trackInfoPanel
@@ -22,7 +22,7 @@ struct NowPlayingPopover: View {
                 }
             } else {
                 emptyState
-                    .padding(16)
+                    .padding(14)
             }
         }
         .animation(.easeOut(duration: 0.2), value: showTrackInfo)
@@ -37,7 +37,7 @@ struct NowPlayingPopover: View {
     // MARK: - Three Icons
 
     private var iconRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             artworkButton
             heartIcon
             plusButton
@@ -57,18 +57,17 @@ struct NowPlayingPopover: View {
                         .aspectRatio(contentMode: .fill)
                 } else {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(.fill.tertiary)
+                        Color.clear
                         Ph.musicNote.bold
                             .color(.secondary)
-                            .frame(width: 24, height: 24)
+                            .frame(width: 20, height: 20)
                     }
                 }
             }
-            .frame(width: 60, height: 60)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
     }
 
     // MARK: - 2. Heart
@@ -94,13 +93,12 @@ struct NowPlayingPopover: View {
             }
         } label: {
             Ph.plus.bold
-                .color(.primary)
-                .frame(width: 28, height: 28)
-                .frame(width: 60, height: 60)
-                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 14))
+                .color(.white)
+                .frame(width: 20, height: 20)
+                .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
         .contextMenu {
             ForEach(playlistManager.playlists, id: \.self) { playlist in
                 Button(playlist) {
@@ -155,8 +153,8 @@ struct NowPlayingPopover: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
     }
 
     // MARK: - Toast
@@ -185,16 +183,15 @@ struct NowPlayingPopover: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(.fill.tertiary)
+                Color.clear
                 Ph.musicNote.bold
                     .color(.gray)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 20, height: 20)
                     .opacity(0.5)
             }
-            .frame(width: 60, height: 60)
+            .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Nothing playing")

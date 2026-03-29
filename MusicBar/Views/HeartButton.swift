@@ -22,14 +22,13 @@ struct HeartButton: View {
             }
         } label: {
             (isFavorited ? Ph.heart.fill : Ph.heart.bold)
-                .color(isFavorited ? .pink : .primary)
-                .frame(width: 28, height: 28)
+                .color(isFavorited ? .pink : .white)
+                .frame(width: 20, height: 20)
                 .scaleEffect(pulse ? 1.15 : 1.0)
-                .frame(width: 60, height: 60)
-                .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 14))
+                .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
         .opacity(isLoading ? 0.5 : 1.0)
         .disabled(isLoading)
     }
