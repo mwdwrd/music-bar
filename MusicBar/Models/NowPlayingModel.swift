@@ -13,6 +13,7 @@ final class NowPlayingModel {
     var isFavorited: Bool = false
     var isPlaying: Bool = false
     var hasTrack: Bool { title != nil }
+    var trackDidChange: Bool = false  // pulses true when track changes
 
     private var pollTask: Task<Void, Never>?
     private var lastTrackKey: String?
@@ -61,6 +62,7 @@ final class NowPlayingModel {
             if newKey != self.lastTrackKey {
                 self.lastTrackKey = newKey
                 self.artworkImage = nil
+                self.trackDidChange = true
                 await fetchArtwork(title: track.name, artist: track.artist)
             }
         } catch {

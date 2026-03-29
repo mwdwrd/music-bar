@@ -90,15 +90,55 @@ actor AppleScriptBridge {
         try runScript("tell application \"Music\" to set favorited of current track to \(value)")
     }
 
+    func isCurrentTrackInPlaylist(_ playlistName: String) throws -> Bool {
+        guard isMusicRunning() else { return false }
+        let escaped = playlistName.replacingOccurrences(of: "\"", with: "\\\"")
+        let script = """
+        tell application "Music"
+            set trackName to name of current track
+            set trackArtist to artist of current track
+            set thePlaylist to playlist "\(escaped)"
+            set found to false
+            repeat with t in tracks of thePlaylist
+                if name of t is trackName and artist of t is trackArtist then
+                    set found to true
+                    exit repeat
+                end if
+            end repeat
+            return found
+        end tell
+        """
+        let result = try runScript(script)
+        return result.lowercased() == "true"
+    }
+
     func addCurrentTrackToPlaylist(_ playlistName: String) throws {
         guard isMusicRunning() else { throw BridgeError.musicAppNotRunning }
-        // Escape quotes in playlist name
         let escaped = playlistName.replacingOccurrences(of: "\"", with: "\\\"")
         let script = """
         tell application "Music"
             set theTrack to current track
             set thePlaylist to playlist "\(escaped)"
             duplicate theTrack to thePlaylist
+        end tell
+        """
+        try runScript(script)
+    }
+
+    func removeCurrentTrackFromPlaylist(_ playlistName: String) throws {
+        guard isMusicRunning() else { throw BridgeError.musicAppNotRunning }
+        let escaped = playlistName.replacingOccurrences(of: "\"", with: "\\\"")
+        let script = """
+        tell application "Music"
+            set trackName to name of current track
+            set trackArtist to artist of current track
+            set thePlaylist to playlist "\(escaped)"
+            repeat with t in tracks of thePlaylist
+                if name of t is trackName and artist of t is trackArtist then
+                    delete t
+                    exit repeat
+                end if
+            end repeat
         end tell
         """
         try runScript(script)

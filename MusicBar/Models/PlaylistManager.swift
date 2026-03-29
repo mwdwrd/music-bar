@@ -5,18 +5,19 @@ import Observation
 @Observable
 final class PlaylistManager {
     var playlists: [String] = []
-    var lastUsedPlaylist: String? {
+    var isInTargetPlaylist: Bool = false
+    var isLoading = false
+
+    var targetPlaylist: String? {
         didSet {
-            if let lastUsedPlaylist {
-                UserDefaults.standard.set(lastUsedPlaylist, forKey: "lastUsedPlaylist")
+            if let targetPlaylist {
+                UserDefaults.standard.set(targetPlaylist, forKey: "targetPlaylist")
             }
         }
     }
-    var isLoading = false
-    var confirmationMessage: String?
 
     init() {
-        lastUsedPlaylist = UserDefaults.standard.string(forKey: "lastUsedPlaylist")
+        targetPlaylist = UserDefaults.standard.string(forKey: "targetPlaylist")
         Task { await refreshPlaylists() }
     }
 
@@ -24,31 +25,37 @@ final class PlaylistManager {
         do {
             let names = try await AppleScriptBridge.shared.getPlaylistNames()
             self.playlists = names
+        } catch {}
+    }
+
+    /// Check if the current track is already in the target playlist.
+    func checkMembership() async {
+        guard let playlist = targetPlaylist else {
+            isInTargetPlaylist = false
+            return
+        }
+        do {
+            let result = try await AppleScriptBridge.shared.isCurrentTrackInPlaylist(playlist)
+            self.isInTargetPlaylist = result
         } catch {
-            // Non-critical — user can retry
+            self.isInTargetPlaylist = false
         }
     }
 
-    func addToPlaylist(_ playlistName: String, trackName: String, artistName: String) async -> Bool {
+    /// Toggle: add if not in playlist, remove if already in.
+    func toggle() async {
+        guard let playlist = targetPlaylist else { return }
         isLoading = true
         defer { isLoading = false }
 
         do {
-            try await AppleScriptBridge.shared.addCurrentTrackToPlaylist(playlistName)
-            lastUsedPlaylist = playlistName
-            showConfirmation("Added to \(playlistName)")
-            return true
-        } catch {
-            showConfirmation("Failed to add")
-            return false
-        }
-    }
-
-    private func showConfirmation(_ message: String) {
-        confirmationMessage = message
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            confirmationMessage = nil
-        }
+            if isInTargetPlaylist {
+                try await AppleScriptBridge.shared.removeCurrentTrackFromPlaylist(playlist)
+                isInTargetPlaylist = false
+            } else {
+                try await AppleScriptBridge.shared.addCurrentTrackToPlaylist(playlist)
+                isInTargetPlaylist = true
+            }
+        } catch {}
     }
 }

@@ -8,7 +8,6 @@ struct NowPlayingPopover: View {
     var onQuit: () -> Void
 
     @State private var showTrackInfo = false
-    @State private var toastMessage: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,11 +25,16 @@ struct NowPlayingPopover: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: showTrackInfo)
-        .overlay(alignment: .bottom) {
-            toast
+        .onChange(of: nowPlaying.trackDidChange) {
+            if nowPlaying.trackDidChange {
+                showTrackInfo = false
+                Task { await playlistManager.checkMembership() }
+                nowPlaying.trackDidChange = false
+            }
         }
-        .onChange(of: nowPlaying.title) {
-            showTrackInfo = false
+        .contextMenu {
+            Button("Settings...") { onOpenSettings() }
+            Button("Quit Music Bar") { onQuit() }
         }
     }
 
@@ -39,8 +43,8 @@ struct NowPlayingPopover: View {
     private var iconRow: some View {
         HStack(spacing: 8) {
             artworkButton
-            heartIcon
-            plusButton
+            heartButton
+            playlistButton
         }
     }
 
@@ -72,7 +76,7 @@ struct NowPlayingPopover: View {
 
     // MARK: - 2. Heart
 
-    private var heartIcon: some View {
+    private var heartButton: some View {
         HeartButton(isFavorited: $nowPlaying.isFavorited) {
             do {
                 let newState = !nowPlaying.isFavorited
@@ -84,49 +88,16 @@ struct NowPlayingPopover: View {
         }
     }
 
-    // MARK: - 3. Plus
+    // MARK: - 3. Playlist Toggle
 
-    private var plusButton: some View {
-        Button {
-            if let playlist = playlistManager.lastUsedPlaylist {
-                addToPlaylist(playlist)
-            }
-        } label: {
-            Ph.plus.bold
-                .color(.white)
-                .frame(width: 20, height: 20)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.glass)
-        .contextMenu {
-            ForEach(playlistManager.playlists, id: \.self) { playlist in
-                Button(playlist) {
-                    addToPlaylist(playlist)
-                }
-            }
-            if playlistManager.playlists.isEmpty {
-                Text("No playlists found")
-            }
-
-            Divider()
-
-            Button("Settings...") { onOpenSettings() }
-            Button("Quit Music Bar") { onQuit() }
-        }
-    }
-
-    private func addToPlaylist(_ name: String) {
-        guard let title = nowPlaying.title,
-              let artist = nowPlaying.artistName else { return }
-        Task {
-            let success = await playlistManager.addToPlaylist(
-                name, trackName: title, artistName: artist
-            )
-            if success {
-                showToast("Added to \(name)")
-            }
-        }
+    private var playlistButton: some View {
+        PlaylistToggle(
+            isInPlaylist: playlistManager.isInTargetPlaylist,
+            isConfigured: playlistManager.targetPlaylist != nil,
+            isLoading: playlistManager.isLoading,
+            onToggle: { Task { await playlistManager.toggle() } },
+            onOpenSettings: onOpenSettings
+        )
     }
 
     // MARK: - Track Info Panel
@@ -157,29 +128,6 @@ struct NowPlayingPopover: View {
         .padding(.bottom, 10)
     }
 
-    // MARK: - Toast
-
-    @ViewBuilder
-    private var toast: some View {
-        if let message = toastMessage {
-            Text(message)
-                .font(.system(size: 11, weight: .medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(.ultraThinMaterial, in: Capsule())
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.bottom, 4)
-        }
-    }
-
-    private func showToast(_ message: String) {
-        withAnimation(.easeOut(duration: 0.15)) { toastMessage = message }
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            withAnimation(.easeIn(duration: 0.3)) { toastMessage = nil }
-        }
-    }
-
     // MARK: - Empty State
 
     private var emptyState: some View {
@@ -202,6 +150,45 @@ struct NowPlayingPopover: View {
                     .foregroundStyle(.tertiary)
             }
         }
+    }
+}
+
+// MARK: - Playlist Toggle Button
+
+struct PlaylistToggle: View {
+    let isInPlaylist: Bool
+    let isConfigured: Bool
+    let isLoading: Bool
+    var onToggle: () -> Void
+    var onOpenSettings: () -> Void
+
+    @State private var pulse = false
+
+    var body: some View {
+        Button {
+            if isConfigured {
+                onToggle()
+                withAnimation(.easeOut(duration: 0.12)) { pulse = true }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(120))
+                    await MainActor.run {
+                        withAnimation(.easeIn(duration: 0.2)) { pulse = false }
+                    }
+                }
+            } else {
+                onOpenSettings()
+            }
+        } label: {
+            (isInPlaylist ? Ph.check.bold : Ph.plus.bold)
+                .color(isInPlaylist ? .green : .white)
+                .frame(width: 20, height: 20)
+                .scaleEffect(pulse ? 1.15 : 1.0)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.glass)
+        .opacity(isLoading ? 0.5 : 1.0)
+        .disabled(isLoading)
     }
 }
 

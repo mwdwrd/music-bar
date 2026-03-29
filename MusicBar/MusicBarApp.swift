@@ -55,14 +55,8 @@ struct MusicBarApp: App {
 
         KeyboardShortcuts.onKeyUp(for: .addToLastPlaylist) { [self] in
             Task { @MainActor in
-                guard let title = nowPlaying.title,
-                      let artist = nowPlaying.artistName,
-                      let playlist = playlistManager.lastUsedPlaylist else { return }
-                await playlistManager.addToPlaylist(
-                    playlist,
-                    trackName: title,
-                    artistName: artist
-                )
+                guard nowPlaying.hasTrack else { return }
+                await playlistManager.toggle()
             }
         }
     }
