@@ -82,6 +82,18 @@ actor AppleScriptBridge {
         return result.data
     }
 
+    // MARK: - Playback Controls
+
+    func playPause() throws {
+        guard isMusicRunning() else { throw BridgeError.musicAppNotRunning }
+        try runScript("tell application \"Music\" to playpause")
+    }
+
+    func nextTrack() throws {
+        guard isMusicRunning() else { throw BridgeError.musicAppNotRunning }
+        try runScript("tell application \"Music\" to next track")
+    }
+
     // MARK: - Write Operations
 
     func setFavorited(_ favorited: Bool) throws {

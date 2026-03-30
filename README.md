@@ -12,11 +12,13 @@ Four icons live in your menu bar popover:
 
 | Icon | Action |
 |------|--------|
-| Album art | Shows what's currently playing |
+| Album art | Shows what's currently playing — hover to reveal play/pause, click to toggle |
 | Heart | Toggle love on the current track |
 | Plus | Add/remove current track from your chosen playlist |
 | Gear | Open settings |
 
+- **Play/pause** by hovering over the album art and clicking — the overlay shows the current action
+- **Skip next** button sits next to the artist name for quick track advancing
 - **Heart** and **Plus** are toggles — they show the current state and flip it on click
 - **Plus** checks for duplicates — won't add a song that's already in the playlist
 - Long song titles scroll like a ticker tape

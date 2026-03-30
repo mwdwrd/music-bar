@@ -45,27 +45,51 @@ struct NowPlayingPopover: View {
         }
     }
 
-    // MARK: - 1. Artwork
+    // MARK: - 1. Artwork (tap to play/pause)
+
+    @State private var artworkHovered = false
 
     private var artworkIcon: some View {
-        Group {
-            if let image = nowPlaying.artworkImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                ZStack {
-                    Color.clear
-                    Ph.musicNote.bold
+        Button {
+            Task {
+                try? await AppleScriptBridge.shared.playPause()
+            }
+        } label: {
+            ZStack {
+                if let image = nowPlaying.artworkImage {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    ZStack {
+                        Color.clear
+                        Ph.musicNote.bold
+                            .renderingMode(.template)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20, height: 20)
+                    }
+                }
+
+                // Play/pause overlay on hover
+                if artworkHovered {
+                    Color.black.opacity(0.45)
+                    (nowPlaying.isPlaying ? Ph.pause.fill : Ph.play.fill)
                         .renderingMode(.template)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 20, height: 20)
+                        .foregroundStyle(.white)
+                        .frame(width: 18, height: 18)
                 }
             }
+            .frame(width: iconSize, height: iconSize)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .contentShape(Rectangle())
         }
-        .frame(width: iconSize, height: iconSize)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .buttonStyle(.plain)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                artworkHovered = hovering
+            }
+        }
     }
 
     // MARK: - 2. Heart
@@ -121,14 +145,45 @@ struct NowPlayingPopover: View {
                     font: .system(size: 12, weight: .medium)
                 )
             }
-            Text(nowPlaying.artistName ?? "")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            HStack(spacing: 0) {
+                Text(nowPlaying.artistName ?? "")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer()
+                skipNextButton
+            }
         }
         .frame(width: rowWidth, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.bottom, 10)
+    }
+
+    // MARK: - Skip Next
+
+    @State private var skipPulse = false
+
+    private var skipNextButton: some View {
+        Button {
+            Task {
+                try? await AppleScriptBridge.shared.nextTrack()
+            }
+            withAnimation(.easeOut(duration: 0.1)) { skipPulse = true }
+            Task {
+                try? await Task.sleep(for: .milliseconds(100))
+                await MainActor.run {
+                    withAnimation(.easeIn(duration: 0.15)) { skipPulse = false }
+                }
+            }
+        } label: {
+            Ph.skipForward.fill
+                .renderingMode(.template)
+                .foregroundStyle(.secondary)
+                .frame(width: 12, height: 12)
+                .scaleEffect(skipPulse ? 1.2 : 1.0)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Empty State
